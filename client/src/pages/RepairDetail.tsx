@@ -32,6 +32,7 @@ const statusMap: Record<string, { label: string; color: string; bg: string }> = 
   pending: { label: '待受理', color: '#faad14', bg: '#fffbe6' },
   processing: { label: '处理中', color: '#1890ff', bg: '#e6f7ff' },
   resolved: { label: '已修好', color: '#52c41a', bg: '#f6ffed' },
+  cancelled: { label: '已取消', color: '#8c8c8c', bg: '#f5f5f5' },
 };
 
 const statusSteps = [
@@ -226,6 +227,74 @@ const styles: Record<string, React.CSSProperties> = {
     objectFit: 'contain' as const,
     borderRadius: '8px',
   },
+  cancelBtn: {
+    padding: '10px 24px',
+    background: '#fff',
+    color: '#ff4d4f',
+    border: '1px solid #ff4d4f',
+    borderRadius: '6px',
+    fontSize: '14px',
+    fontWeight: 600,
+    cursor: 'pointer',
+    marginLeft: '12px',
+  },
+  confirmModal: {
+    position: 'fixed' as const,
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    background: 'rgba(0,0,0,0.45)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 1001,
+  },
+  confirmBox: {
+    background: '#fff',
+    borderRadius: '12px',
+    padding: '28px',
+    width: '400px',
+    maxWidth: '90vw',
+    boxShadow: '0 6px 24px rgba(0,0,0,0.15)',
+  },
+  confirmTitle: {
+    fontSize: '18px',
+    fontWeight: 600,
+    color: '#333',
+    marginBottom: '12px',
+  },
+  confirmContent: {
+    fontSize: '14px',
+    color: '#666',
+    marginBottom: '24px',
+    lineHeight: '1.6',
+  },
+  confirmBtnRow: {
+    display: 'flex',
+    justifyContent: 'flex-end',
+    gap: '10px',
+  },
+  confirmBtn: {
+    padding: '8px 20px',
+    borderRadius: '6px',
+    fontSize: '14px',
+    fontWeight: 500,
+    cursor: 'pointer',
+    border: '1px solid #d9d9d9',
+    background: '#fff',
+    color: '#666',
+  },
+  confirmBtnDanger: {
+    padding: '8px 20px',
+    borderRadius: '6px',
+    fontSize: '14px',
+    fontWeight: 500,
+    cursor: 'pointer',
+    border: 'none',
+    background: '#ff4d4f',
+    color: '#fff',
+  },
 };
 
 export default function RepairDetail() {
@@ -240,6 +309,8 @@ export default function RepairDetail() {
   const [review, setReview] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [modalPhoto, setModalPhoto] = useState<string | null>(null);
+  const [showCancelConfirm, setShowCancelConfirm] = useState(false);
+  const [cancelling, setCancelling] = useState(false);
 
   useEffect(() => {
     fetchRepair();
@@ -271,6 +342,20 @@ export default function RepairDetail() {
     }
   };
 
+  const handleCancel = async () => {
+    setCancelling(true);
+    try {
+      const res = await api.put(`/repairs/${id}/cancel`);
+      setRepair(res.data.repair);
+      setShowCancelConfirm(false);
+    } catch (err: unknown) {
+      const axiosErr = err as { response?: { data?: { error?: string } } };
+      alert(axiosErr.response?.data?.error || '取消失败');
+    } finally {
+      setCancelling(false);
+    }
+  };
+
   if (loading) {
     return (
       <div style={styles.container}>
@@ -287,13 +372,42 @@ export default function RepairDetail() {
   if (!repair) return null;
 
   const statusInfo = statusMap[repair.status] || statusMap.pending;
-  const currentStepIndex = statusSteps.findIndex((s) => s.key === repair.status);
+  const isCancelled = repair.status === 'cancelled';
+  const currentStepIndex = isCancelled ? -1 : statusSteps.findIndex((s) => s.key === repair.status);
 
   return (
     <div style={styles.container}>
       {modalPhoto && (
         <div style={styles.photoModal} onClick={() => setModalPhoto(null)}>
           <img src={modalPhoto} alt="放大查看" style={styles.modalImg} />
+        </div>
+      )}
+
+      {showCancelConfirm && (
+        <div style={styles.confirmModal} onClick={(e) => { if (e.target === e.currentTarget) setShowCancelConfirm(false); }}>
+          <div style={styles.confirmBox}>
+            <div style={styles.confirmTitle}>确认取消报修</div>
+            <div style={styles.confirmContent}>
+              您确定要取消这条报修单吗？<br />
+              取消后报修单将标记为"已取消"，宿管将不再处理。
+            </div>
+            <div style={styles.confirmBtnRow}>
+              <button
+                style={styles.confirmBtn}
+                onClick={() => setShowCancelConfirm(false)}
+                disabled={cancelling}
+              >
+                再想想
+              </button>
+              <button
+                style={{ ...styles.confirmBtnDanger, opacity: cancelling ? 0.6 : 1 }}
+                onClick={handleCancel}
+                disabled={cancelling}
+              >
+                {cancelling ? '取消中...' : '确认取消'}
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
@@ -313,45 +427,72 @@ export default function RepairDetail() {
         {/* Status timeline */}
         <div style={styles.card}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-            <span style={{ fontSize: '18px', fontWeight: 600, color: '#333' }}>
-              {repair.problem_type}报修
-            </span>
+            <div style={{ display: 'flex', alignItems: 'center' }}>
+              <span style={{ fontSize: '18px', fontWeight: 600, color: '#333' }}>
+                {repair.problem_type}报修
+              </span>
+              {repair.status === 'pending' && (
+                <button
+                  style={styles.cancelBtn}
+                  onClick={() => setShowCancelConfirm(true)}
+                >
+                  取消报修
+                </button>
+              )}
+            </div>
             <span style={{ ...styles.statusBig, color: statusInfo.color, background: statusInfo.bg }}>
               {statusInfo.label}
             </span>
           </div>
 
-          <div style={styles.timeline}>
-            {statusSteps.map((step, index) => {
-              const isActive = index <= currentStepIndex;
-              const isCurrent = index === currentStepIndex;
-              return (
-                <div key={step.key} style={{ display: 'flex', alignItems: 'center', flex: 1 }}>
-                  <div style={styles.step}>
-                    <div
-                      style={{
-                        ...styles.stepDot,
-                        background: isActive ? (isCurrent ? statusInfo.color : '#52c41a') : '#e8e8e8',
-                      }}
-                    >
-                      {index < currentStepIndex ? '✓' : index + 1}
+          {isCancelled ? (
+            <div
+              style={{
+                textAlign: 'center',
+                padding: '30px 0',
+                color: '#8c8c8c',
+                fontSize: '15px',
+                background: '#fafafa',
+                borderRadius: '8px',
+              }}
+            >
+              <div style={{ fontSize: '40px', marginBottom: '10px' }}>✕</div>
+              <div style={{ fontWeight: 600, color: '#8c8c8c', marginBottom: '6px' }}>该报修单已被取消</div>
+              <div style={{ fontSize: '13px', color: '#bfbfbf' }}>取消时间：{repair.updated_at}</div>
+            </div>
+          ) : (
+            <div style={styles.timeline}>
+              {statusSteps.map((step, index) => {
+                const isActive = index <= currentStepIndex;
+                const isCurrent = index === currentStepIndex;
+                return (
+                  <div key={step.key} style={{ display: 'flex', alignItems: 'center', flex: 1 }}>
+                    <div style={styles.step}>
+                      <div
+                        style={{
+                          ...styles.stepDot,
+                          background: isActive ? (isCurrent ? statusInfo.color : '#52c41a') : '#e8e8e8',
+                        }}
+                      >
+                        {index < currentStepIndex ? '✓' : index + 1}
+                      </div>
+                      <span style={{ ...styles.stepLabel, color: isActive ? '#333' : '#bbb', fontWeight: isCurrent ? 600 : 400 }}>
+                        {step.label}
+                      </span>
                     </div>
-                    <span style={{ ...styles.stepLabel, color: isActive ? '#333' : '#bbb', fontWeight: isCurrent ? 600 : 400 }}>
-                      {step.label}
-                    </span>
+                    {index < statusSteps.length - 1 && (
+                      <div
+                        style={{
+                          ...styles.stepLine,
+                          background: index < currentStepIndex ? '#52c41a' : '#e8e8e8',
+                        }}
+                      />
+                    )}
                   </div>
-                  {index < statusSteps.length - 1 && (
-                    <div
-                      style={{
-                        ...styles.stepLine,
-                        background: index < currentStepIndex ? '#52c41a' : '#e8e8e8',
-                      }}
-                    />
-                  )}
-                </div>
-              );
-            })}
-          </div>
+                );
+              })}
+            </div>
+          )}
         </div>
 
         {/* Repair info */}

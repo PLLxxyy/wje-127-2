@@ -26,6 +26,7 @@ const statusMap: Record<string, { label: string; color: string; bg: string }> = 
   pending: { label: '待受理', color: '#faad14', bg: '#fffbe6' },
   processing: { label: '处理中', color: '#1890ff', bg: '#e6f7ff' },
   resolved: { label: '已修好', color: '#52c41a', bg: '#f6ffed' },
+  cancelled: { label: '已取消', color: '#8c8c8c', bg: '#f5f5f5' },
 };
 
 const styles: Record<string, React.CSSProperties> = {
@@ -207,6 +208,7 @@ export default function AdminDashboard() {
     pending: repairs.filter((r) => r.status === 'pending').length,
     processing: repairs.filter((r) => r.status === 'processing').length,
     resolved: repairs.filter((r) => r.status === 'resolved').length,
+    cancelled: repairs.filter((r) => r.status === 'cancelled').length,
   };
 
   return (
@@ -231,7 +233,7 @@ export default function AdminDashboard() {
         <h2 style={styles.pageTitle}>报修管理</h2>
 
         <div style={styles.filters}>
-          {(['all', 'pending', 'processing', 'resolved'] as const).map((s) => {
+          {(['all', 'pending', 'processing', 'resolved', 'cancelled'] as const).map((s) => {
             const label = s === 'all' ? '全部' : statusMap[s].label;
             return (
               <button

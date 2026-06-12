@@ -9,7 +9,7 @@ interface StatsData {
   avgRating: number;
   todayCount: number;
   statusStats: { status: string; count: number }[];
-  buildingStats: { building: string; total: number; pending: number; processing: number; resolved: number }[];
+  buildingStats: { building: string; total: number; pending: number; processing: number; resolved: number; cancelled: number }[];
   ratingStats: { building: string; rated_count: number; avg_rating: number }[];
   typeStats: { problem_type: string; count: number }[];
 }
@@ -18,6 +18,7 @@ const statusMap: Record<string, { label: string; color: string }> = {
   pending: { label: '待受理', color: '#faad14' },
   processing: { label: '处理中', color: '#1890ff' },
   resolved: { label: '已修好', color: '#52c41a' },
+  cancelled: { label: '已取消', color: '#8c8c8c' },
 };
 
 const styles: Record<string, React.CSSProperties> = {
@@ -264,6 +265,7 @@ export default function AdminStats() {
                     <th style={styles.th}>待受理</th>
                     <th style={styles.th}>处理中</th>
                     <th style={styles.th}>已修好</th>
+                    <th style={styles.th}>已取消</th>
                     <th style={styles.th}>趋势</th>
                   </tr>
                 </thead>
@@ -275,6 +277,7 @@ export default function AdminStats() {
                       <td style={{ ...styles.td, color: '#faad14' }}>{b.pending}</td>
                       <td style={{ ...styles.td, color: '#1890ff' }}>{b.processing}</td>
                       <td style={{ ...styles.td, color: '#52c41a' }}>{b.resolved}</td>
+                      <td style={{ ...styles.td, color: '#8c8c8c' }}>{b.cancelled}</td>
                       <td style={styles.td}>
                         <div style={styles.barContainer}>
                           <div

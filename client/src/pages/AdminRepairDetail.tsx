@@ -32,6 +32,7 @@ const statusMap: Record<string, { label: string; color: string; bg: string }> = 
   pending: { label: '待受理', color: '#faad14', bg: '#fffbe6' },
   processing: { label: '处理中', color: '#1890ff', bg: '#e6f7ff' },
   resolved: { label: '已修好', color: '#52c41a', bg: '#f6ffed' },
+  cancelled: { label: '已取消', color: '#8c8c8c', bg: '#f5f5f5' },
 };
 
 const repairmen = ['王师傅', '张师傅', '李师傅', '赵师傅', '刘师傅'];
@@ -404,74 +405,93 @@ export default function AdminRepairDetail() {
           {error && <div style={styles.error}>{error}</div>}
           {success && <div style={styles.success}>{success}</div>}
 
-          <div style={styles.formRow}>
-            <div style={styles.formGroup}>
-              <label style={styles.label}>处理状态</label>
-              <select
-                style={styles.select}
-                value={newStatus}
-                onChange={(e) => setNewStatus(e.target.value)}
-              >
-                <option value="pending">待受理</option>
-                <option value="processing">处理中</option>
-                <option value="resolved">已修好</option>
-              </select>
-            </div>
-            <div style={styles.formGroup}>
-              <label style={styles.label}>指派维修员</label>
-              <select
-                style={styles.select}
-                value={assignedTo}
-                onChange={(e) => setAssignedTo(e.target.value)}
-              >
-                <option value="">未指派</option>
-                {repairmen.map((name) => (
-                  <option key={name} value={name}>{name}</option>
-                ))}
-              </select>
-            </div>
-          </div>
-
-          <div style={styles.formGroup}>
-            <label style={styles.label}>处理意见</label>
-            <textarea
-              style={styles.textarea}
-              value={adminComment}
-              onChange={(e) => setAdminComment(e.target.value)}
-              placeholder="输入处理意见或备注（学生可见）"
-            />
-          </div>
-
-          <div style={styles.btnRow}>
-            <button
-              style={{ ...styles.btn, ...styles.btnPrimary }}
-              onClick={handleUpdate}
+          {repair.status === 'cancelled' ? (
+            <div
+              style={{
+                textAlign: 'center',
+                padding: '30px 20px',
+                color: '#8c8c8c',
+                fontSize: '14px',
+                background: '#fafafa',
+                borderRadius: '8px',
+              }}
             >
-              保存更新
-            </button>
-            {repair.status === 'pending' && (
-              <button
-                style={{ ...styles.btn, ...styles.btnSuccess }}
-                onClick={() => {
-                  setNewStatus('processing');
-                  setTimeout(() => handleUpdate(), 0);
-                }}
-              >
-                开始处理
-              </button>
-            )}
-            {repair.status === 'processing' && (
-              <button
-                style={{ ...styles.btn, ...styles.btnWarning }}
-                onClick={() => {
-                  setNewStatus('resolved');
-                  setTimeout(() => handleUpdate(), 0);
-                }}
-              >
-                标记已修好
-              </button>
-            )}
-          </div>
+              <div style={{ fontSize: '36px', marginBottom: '10px' }}>✕</div>
+              <div style={{ fontWeight: 600, marginBottom: '6px' }}>该报修单已被学生取消</div>
+              <div style={{ fontSize: '13px', color: '#bfbfbf' }}>取消时间：{repair.updated_at}</div>
+            </div>
+          ) : (
+            <>
+              <div style={styles.formRow}>
+                <div style={styles.formGroup}>
+                  <label style={styles.label}>处理状态</label>
+                  <select
+                    style={styles.select}
+                    value={newStatus}
+                    onChange={(e) => setNewStatus(e.target.value)}
+                  >
+                    <option value="pending">待受理</option>
+                    <option value="processing">处理中</option>
+                    <option value="resolved">已修好</option>
+                  </select>
+                </div>
+                <div style={styles.formGroup}>
+                  <label style={styles.label}>指派维修员</label>
+                  <select
+                    style={styles.select}
+                    value={assignedTo}
+                    onChange={(e) => setAssignedTo(e.target.value)}
+                  >
+                    <option value="">未指派</option>
+                    {repairmen.map((name) => (
+                      <option key={name} value={name}>{name}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              <div style={styles.formGroup}>
+                <label style={styles.label}>处理意见</label>
+                <textarea
+                  style={styles.textarea}
+                  value={adminComment}
+                  onChange={(e) => setAdminComment(e.target.value)}
+                  placeholder="输入处理意见或备注（学生可见）"
+                />
+              </div>
+
+              <div style={styles.btnRow}>
+                <button
+                  style={{ ...styles.btn, ...styles.btnPrimary }}
+                  onClick={handleUpdate}
+                >
+                  保存更新
+                </button>
+                {repair.status === 'pending' && (
+                  <button
+                    style={{ ...styles.btn, ...styles.btnSuccess }}
+                    onClick={() => {
+                      setNewStatus('processing');
+                      setTimeout(() => handleUpdate(), 0);
+                    }}
+                  >
+                    开始处理
+                  </button>
+                )}
+                {repair.status === 'processing' && (
+                  <button
+                    style={{ ...styles.btn, ...styles.btnWarning }}
+                    onClick={() => {
+                      setNewStatus('resolved');
+                      setTimeout(() => handleUpdate(), 0);
+                    }}
+                  >
+                    标记已修好
+                  </button>
+                )}
+              </div>
+            </>
+          )}
         </div>
       </div>
     </div>

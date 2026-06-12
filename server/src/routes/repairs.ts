@@ -126,4 +126,40 @@ router.put('/:id/rate', (req: AuthRequest, res: Response) => {
   }
 });
 
+// PUT /api/repairs/:id/cancel - Cancel a pending repair (student only)
+router.put('/:id/cancel', (req: AuthRequest, res: Response) => {
+  try {
+    const repair = db.prepare('SELECT * FROM repairs WHERE id = ?').get(req.params.id) as Record<string, unknown> | undefined;
+    if (!repair) {
+      res.status(404).json({ error: '报修单不存在' });
+      return;
+    }
+
+    if (repair.student_id !== req.userId) {
+      res.status(403).json({ error: '只能取消自己的报修单' });
+      return;
+    }
+
+    if (repair.status !== 'pending') {
+      res.status(400).json({ error: '仅待受理的报修单可以取消' });
+      return;
+    }
+
+    const now = new Date().toLocaleString('sv-SE', { timeZone: 'Asia/Shanghai' }).replace('T', ' ');
+    db.prepare(
+      'UPDATE repairs SET status = ?, updated_at = ? WHERE id = ?'
+    ).run('cancelled', now, req.params.id);
+
+    const updated = db.prepare('SELECT * FROM repairs WHERE id = ?').get(req.params.id) as Record<string, unknown>;
+    if (typeof updated.photos === 'string') {
+      updated.photos = JSON.parse(updated.photos as string);
+    }
+
+    res.json({ repair: updated });
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : '取消失败';
+    res.status(500).json({ error: message });
+  }
+});
+
 export default router;

@@ -90,8 +90,8 @@ router.get('/stats', (_req: AuthRequest, res: Response) => {
 
     // Per building stats
     const buildingStats = db.prepare(
-      "SELECT building, COUNT(*) as total, SUM(CASE WHEN status='pending' THEN 1 ELSE 0 END) as pending, SUM(CASE WHEN status='processing' THEN 1 ELSE 0 END) as processing, SUM(CASE WHEN status='resolved' THEN 1 ELSE 0 END) as resolved FROM repairs GROUP BY building ORDER BY building"
-    ).all() as { building: string; total: number; pending: number; processing: number; resolved: number }[];
+      "SELECT building, COUNT(*) as total, SUM(CASE WHEN status='pending' THEN 1 ELSE 0 END) as pending, SUM(CASE WHEN status='processing' THEN 1 ELSE 0 END) as processing, SUM(CASE WHEN status='resolved' THEN 1 ELSE 0 END) as resolved, SUM(CASE WHEN status='cancelled' THEN 1 ELSE 0 END) as cancelled FROM repairs GROUP BY building ORDER BY building"
+    ).all() as { building: string; total: number; pending: number; processing: number; resolved: number; cancelled: number }[];
 
     // Rating stats per building
     const ratingStats = db.prepare(

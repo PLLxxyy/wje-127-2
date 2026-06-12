@@ -24,6 +24,7 @@ const statusMap: Record<string, { label: string; color: string; bg: string }> = 
   pending: { label: '待受理', color: '#faad14', bg: '#fffbe6' },
   processing: { label: '处理中', color: '#1890ff', bg: '#e6f7ff' },
   resolved: { label: '已修好', color: '#52c41a', bg: '#f6ffed' },
+  cancelled: { label: '已取消', color: '#8c8c8c', bg: '#f5f5f5' },
 };
 
 const styles: Record<string, React.CSSProperties> = {
