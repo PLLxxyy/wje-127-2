@@ -16,7 +16,7 @@ function request(method: string, path: string, body?: unknown, token?: string): 
       },
     };
     if (token) {
-      options.headers!['Authorization'] = `Bearer ${token}`;
+      (options.headers as http.OutgoingHttpHeaders)['Authorization'] = `Bearer ${token}`;
     }
     const req = http.request(options, (res) => {
       let data = '';
