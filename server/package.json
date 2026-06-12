@@ -6,7 +6,8 @@
     "dev": "tsx watch src/index.ts",
     "build": "tsc",
     "start": "node dist/index.js",
-    "seed": "tsx src/seed.ts"
+    "seed": "tsx src/seed.ts",
+    "test": "SKIP_LISTEN=1 tsx src/test-status-transitions.ts"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
