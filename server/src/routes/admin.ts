@@ -35,6 +35,18 @@ router.get('/repairs', (req: AuthRequest, res: Response) => {
   }
 });
 
+// Status transition rules: which statuses can transition to which
+// pending:    can go to processing, resolved, cancelled
+// processing: can go to resolved (cannot go back to pending, cannot go to cancelled)
+// resolved:   terminal state (cannot change)
+// cancelled:  terminal state (cannot change)
+const validTransitions: Record<string, string[]> = {
+  pending: ['processing', 'resolved', 'cancelled'],
+  processing: ['resolved'],
+  resolved: [],
+  cancelled: [],
+};
+
 // PUT /api/admin/repairs/:id - Update repair (assign, status, comment)
 router.put('/repairs/:id', (req: AuthRequest, res: Response) => {
   try {
@@ -44,6 +56,24 @@ router.put('/repairs/:id', (req: AuthRequest, res: Response) => {
     if (!repair) {
       res.status(404).json({ error: '报修单不存在' });
       return;
+    }
+
+    // Status transition validation
+    if (status !== undefined && status !== repair.status) {
+      const currentStatus = repair.status as string;
+      const allowed = validTransitions[currentStatus] || [];
+      if (!allowed.includes(status)) {
+        const statusLabels: Record<string, string> = {
+          pending: '待受理',
+          processing: '处理中',
+          resolved: '已修好',
+          cancelled: '已取消',
+        };
+        const fromLabel = statusLabels[currentStatus] || currentStatus;
+        const toLabel = statusLabels[status] || status;
+        res.status(400).json({ error: `状态不合法：无法从「${fromLabel}」改为「${toLabel}」` });
+        return;
+      }
     }
 
     const now = new Date().toLocaleString('sv-SE', { timeZone: 'Asia/Shanghai' }).replace('T', ' ');
